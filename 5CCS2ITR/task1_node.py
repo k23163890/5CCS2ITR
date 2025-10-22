@@ -4,42 +4,63 @@ from geometry_msgs.msg import Twist
 from turtlesim.msg import Pose
 import math
 
-# Global variable to store current turtle position
-current_pose = Pose()
+#stores turtle's current position
+currentPosition = Pose()
 
 # Callback function to update turtle's current position
-def pose_callback(msg):
-    global current_pose
-    current_pose = msg
+def poseMessage(msg):
+    global currentPosition
+    currentPosition = msg
+
+#Mover function
+def moveQuick(value, type, pub):
+    if type == "linear": #Change linear if specified
+        move = Twist()
+        move.linear.x = value
+        pub.publish(move)
+        rospy.sleep(1)
+    elif type == "angular": #change angular if specified
+        move_cmd = Twist()
+        move_cmd.angular.z = value
+        pub.publish(move_cmd)
+        rospy.sleep(1)
+        
+
 
 # Closed-loop function: move turtle to a starting corner
-def reach_corner():
+def reachCorner():
     pub = rospy.Publisher('/turtle1/cmd_vel', Twist, queue_size=10)
-    rospy.Subscriber('/turtle1/pose', Pose, pose_callback)
+    rospy.Subscriber('/turtle1/pose', Pose, poseMessage)
     rate = rospy.Rate(10)  # 10 Hz loop
 
-    target_x = 2.0  # X coordinate of starting corner
-    target_y = 2.0  # Y coordinate of starting corner
+    startingX = 2.0  # X coordinate of starting corner
+    startingY = 2.0  # Y coordinate of starting corner
 
     while not rospy.is_shutdown():
-        move_cmd = Twist()
+        move = Twist()
         # Calculate distance and angle to target
-        dx = target_x - current_pose.x
-        dy = target_y - current_pose.y
-        distance = math.hypot(dx, dy)
-        angle = math.atan2(dy, dx) - current_pose.theta
+        differenceX = startingX - currentPosition.x
+        differenceY = startingY - currentPosition.y
+        distance = math.hypot(differenceX, differenceY)
+        angle = math.atan2(differenceY, differenceX) - currentPosition.theta
 
         # Stop if we are close enough
         if distance < 0.05:
-            move_cmd.linear.x = 0
-            move_cmd.angular.z = 0
-            pub.publish(move_cmd)
+            move.linear.x = 0
+            move.angular.z = 0
+            pub.publish(move)
             break
 
         # Move towards target
-        move_cmd.linear.x = min(distance, 1.0)  # limit speed
-        move_cmd.angular.z = angle
-        pub.publish(move_cmd)
+        move.linear.x = min(distance, 1.0)  # limit speed
+        move.angular.z = angle
+        pub.publish(move)
+        rate.sleep()
+
+    while abs(currentPosition.theta) > 0.05:
+        move = Twist()
+        move.angular.z = -0.5 * currentPosition.theta
+        pub.publish(move)
         rate.sleep()
 
 # Open-loop function: draw rectangle indefinitely
@@ -51,30 +72,18 @@ def draw_rectangle():
 
     while not rospy.is_shutdown():
         # Move forward along x-axis (longer side)
-        move_cmd = Twist()
-        move_cmd.linear.x = width
-        pub.publish(move_cmd)
-        rospy.sleep(1)
+        moveQuick(width, "linear", pub)
 
         # Turn 90 degrees
-        move_cmd = Twist()
-        move_cmd.angular.z = math.pi / 2
-        pub.publish(move_cmd)
-        rospy.sleep(1)
+        moveQuick(math.pi / 2, "angular", pub)
 
         # Move forward along y-axis (shorter side)
-        move_cmd = Twist()
-        move_cmd.linear.x = height
-        pub.publish(move_cmd)
-        rospy.sleep(1)
+        moveQuick(height, "linear", pub)
 
         # Turn 90 degrees
-        move_cmd = Twist()
-        move_cmd.angular.z = math.pi / 2
-        pub.publish(move_cmd)
-        rospy.sleep(1)
+        moveQuick(math.pi / 2, "angular", pub)
 
 if __name__ == "__main__":
     rospy.init_node("turtle_rectangle_node")
-    reach_corner()     # move to starting corner
+    reachCorner()     # move to starting corner
     draw_rectangle()   # start drawing rectangle
