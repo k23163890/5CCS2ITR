@@ -1,7 +1,7 @@
 
 --Terminal 1 --
 ros - to start apptainer
-roscore
+roscore in this terminal
 
 --Terminal 2 --
 rosrun turtlesim turtlesim_node
