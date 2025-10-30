@@ -1,0 +1,6 @@
+<launch>
+
+<node pkg="turtlesim" type="turtlesim_node" name = "turtlesim" />
+<node pkg="turtle_nav" type= "circle.py" name = "circle_navigation"
+
+</launch>
