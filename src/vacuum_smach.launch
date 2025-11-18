@@ -1,0 +1,16 @@
+<launch>
+
+    <node pkg="vacuum_smach"
+          type="vacuum_smach_node.py"
+          name="smach_controller"
+          output="screen">
+    </node>
+
+    <node pkg="smach_ros"
+          type="introspection_server.py"
+          name="smach_viewer_server"
+          output="screen">
+        <param name="server_name" value="/SM_ROOT"/>
+    </node>
+
+    </launch>
